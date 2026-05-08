@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Note AI | Live Transcription</title>
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --accent: #10b981;
+            --surface: #171717;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg);
+            color: #e5e5e5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .transcriber-card {
+            background: var(--surface);
+            padding: 30px;
+            border-radius: 24px;
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            border: 1px solid #262626;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            background: #ef4444;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+
+        .status-dot.active {
+            background: var(--accent);
+            box-shadow: 0 0 15px var(--accent);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.4; }
+            100% { opacity: 1; }
+        }
+
+        #output {
+            background: #000;
+            margin-top: 25px;
+            padding: 20px;
+            border-radius: 12px;
+            min-height: 150px;
+            text-align: left;
+            line-height: 1.6;
+            color: #d4d4d4;
+            border: 1px solid #333;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 25px;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .start-btn { background: var(--accent); color: white; }
+        .clear-btn { background: #404040; color: white; }
+
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+
+<div class="transcriber-card">
+    <div style="font-size: 14px; color: #737373; margin-bottom: 10px;">
+        <span id="dot" class="status-dot"></span>
+        <span id="status-text">Mikrofon o'chiq</span>
+    </div>
+    <h2 style="margin: 0 0 10px 0;">Voice Note AI</h2>
+    <p style="font-size: 14px; color: #a3a3a3;">Gapiring, men uni matnga aylantiraman...</p>
+
+    <div id="output" placeholder="Matn shu yerda ko'rinadi..."></div>
+
+    <div class="btn-group">
+        <button id="startBtn" class="start-btn" onclick="startRecognition()">Eshishni boshlash</button>
+        <button class="clear-btn" onclick="clearText()">Tozalash</button>
+    </div>
+</div>
+
+<script>
+    // Web Speech API interfeysini olish
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    
+    if (!SpeechRecognition) {
+        alert("Kechirasiz, brauzeringiz ovozni aniqlashni qo'llab-quvvatlamaydi. Iltimos Chrome'dan foydalaning.");
+    } else {
+        const recognition = new SpeechRecognition();
+        recognition.continuous = true; // Uzluksiz eshitish
+        recognition.interimResults = true; // Gapirayotganda natijani ko'rsatish
+        recognition.lang = 'uz-UZ'; // Tilni sozlash (O'zbek tili uchun)
+
+        const output = document.getElementById('output');
+        const startBtn = document.getElementById('startBtn');
+        const dot = document.getElementById('dot');
+        const statusText = document.getElementById('status-text');
+
+        let finalTranscript = '';
+
+        recognition.onstart = () => {
+            dot.classList.add('active');
+            statusText.innerText = "Eshityapman...";
+            startBtn.disabled = true;
+        };
+
+        recognition.onresult = (event) => {
+            let interimTranscript = '';
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+                if (event.results[i].isFinal) {
+                    finalTranscript += event.results[i][0].transcript + '. ';
+                } else {
+                    interimTranscript += event.results[i][0].transcript;
+                }
+            }
+            output.innerHTML = `<span style="color:white">${finalTranscript}</span><i style="color:#737373">${interimTranscript}</i>`;
+        };
+
+        recognition.onerror = (event) => {
+            console.error(event.error);
+            stopRecognition();
+        };
+
+        recognition.onend = () => {
+            stopRecognition();
+        };
+
+        function startRecognition() {
+            recognition.start();
+        }
+
+        function stopRecognition() {
+            dot.classList.remove('active');
+            statusText.innerText = "Mikrofon o'chiq";
+            startBtn.disabled = false;
+        }
+
+        function clearText() {
+            finalTranscript = '';
+            output.innerHTML = '';
+        }
+    }
+</script>
+
+</body>
+</html>
